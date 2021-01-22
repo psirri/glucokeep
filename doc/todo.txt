@@ -1,0 +1,74 @@
+------------------------------------------------
+TODO CURRENT:
+
+- reorganize code
+- use interpolated data for IQR calculations
+
+
+
+
+
+
+------------------------------------------------
+
+0.5 HOUR
+    - make the last window(s)
+
+------------------------------------------------
+
+0.25 HOUR
+    - link UI buttons together
+
+ONE HOUR
+    - read data from a csv file into numpy
+    - write data to file
+        - time
+        - type of event
+        - value
+        - value 2 (blank unless exercise)
+
+3.5 hours: implement data visualization methods
+        - setup figure canvas (0.50 HOUR)
+        - support for date range (.50 HOUR)
+        - trends plot (0.75 HOUR)
+            - IQR with modular ranges
+            - scatter plot with up to 7 days
+            - linear interpolation (inactive box until scatter plot is active)
+            - toggle each type of event
+        - tab for time in range as pie chart and bar graph (0.50 HOUR)
+        - tab for all other scores (0.50 HOUR)
+        - hover feature? maybe once the paper is more finalized (0.75)
+
+
+0.5 hours
+    - make app icon
+
+0.5 hours
+    - set icon as app background on start screen
+
+
+
+
+
+Is this worth my time?
+make the visualize button work for any file type
+make save event only work for when
+
+
+
+# later: exercise events are causing "ragged nested warning" bc of length
+
+change to object oriented event lists
+
+
+
+
+
+
+
+
+
+
+
+
+
