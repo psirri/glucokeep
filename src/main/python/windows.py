@@ -64,6 +64,9 @@ class StartWindow(QMainWindow, Start_Ui):
         self.ctx = ctx
         self.setupUi(self)
 
+        # set the title
+        self.setWindowTitle("GlucoKeep  Start")
+
         # instantiate menu options
         self.selection_window = None
         self.visualizer_window = None
@@ -98,6 +101,9 @@ class SelectionWindow(QMainWindow, Selection_Ui):
         super(SelectionWindow, self).__init__(*args, **kwargs)
         self.ctx = ctx
         self.setupUi(self)
+
+        # set the title
+        self.setWindowTitle("Add Event")
 
         # connect UI elements using slots and signals
         self.glucose_button.clicked.connect(self.glucose_event)
@@ -141,6 +147,11 @@ class GlucoseWindow(QMainWindow, Glucose_Ui):
         super(GlucoseWindow, self).__init__(*args, **kwargs)
         self.ctx = ctx
         self.setupUi(self)
+
+        # set the title
+        self.setWindowTitle("Glucose Event")
+
+        # set current time
         self.dateTimeEdit.setDateTime(QtCore.QDateTime.currentDateTime())
 
         # connect UI elements using slots and signals
@@ -175,6 +186,11 @@ class CarbsWindow(QMainWindow, Carbs_Ui):
         super(CarbsWindow, self).__init__(*args, **kwargs)
         self.ctx = ctx
         self.setupUi(self)
+
+        # set the title
+        self.setWindowTitle("Carbs Event")
+
+        # set current time
         self.dateTimeEdit.setDateTime(QtCore.QDateTime.currentDateTime())
 
         # connect UI elements using slots and signals
@@ -208,6 +224,11 @@ class ExerciseWindow(QMainWindow, Exercise_Ui):
         super(ExerciseWindow, self).__init__(*args, **kwargs)
         self.ctx = ctx
         self.setupUi(self)
+
+        # set the title
+        self.setWindowTitle("Exercise Event")
+
+        # set current time
         self.dateTimeEdit.setDateTime(QtCore.QDateTime.currentDateTime())
 
         # connect UI elements using slots and signals
@@ -241,6 +262,11 @@ class FastInsulinWindow(QMainWindow, FastInsulin_Ui):
         super(FastInsulinWindow, self).__init__(*args, **kwargs)
         self.ctx = ctx
         self.setupUi(self)
+
+        # set the title
+        self.setWindowTitle("Fast-Acting Insulin Event")
+
+        # set current time
         self.dateTimeEdit.setDateTime(QtCore.QDateTime.currentDateTime())
 
         # connect UI elements using slots and signals
@@ -274,6 +300,11 @@ class LongInsulinWindow(QMainWindow, LongInsulin_Ui):
         super(LongInsulinWindow, self).__init__(*args, **kwargs)
         self.ctx = ctx
         self.setupUi(self)
+
+        # set the title
+        self.setWindowTitle("Long-Acting Insulin Event")
+
+        # set current time
         self.dateTimeEdit.setDateTime(QtCore.QDateTime.currentDateTime())
 
         # connect UI elements using slots and signals
@@ -334,6 +365,11 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
         super(VisualizerWindow, self).__init__(*args, **kwargs)
         self.ctx = ctx
         self.setupUi(self)
+
+        # set the title
+        self.setWindowTitle("GlucoKeep  Visualize Data")
+
+        # set set widgets to expand
         self.mainplot.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
                                     QtWidgets.QSizePolicy.Expanding)
 
