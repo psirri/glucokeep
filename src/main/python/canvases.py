@@ -15,7 +15,8 @@ class InteractivePlot(FigureCanvasQTAgg):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes_glucose = self.fig.add_subplot(111)
         self.axes_insulin = self.axes_glucose.twinx()
-        self.axes_carb_exercise = None
+        self.axes_carb = None
+        self.axes_exercise = None
         super(InteractivePlot, self).__init__(self.fig)
 
 

@@ -2,8 +2,6 @@ import os
 import csv
 from datetime import datetime, timedelta
 import numpy as np
-import copy
-import pandas as pd
 
 from PyQt5.QtCore import QDateTime, QTime, QDate
 # import time
@@ -23,14 +21,16 @@ from PyQt5 import QtCore, QtWidgets
 # from matplotlib.figure import Figure
 from matplotlib.markers import MarkerStyle
 
-from ui.glucokeep_startscreen_v1 import Ui_MainWindow as Start_Ui
+from ui.glucokeep_startscreen_v2 import Ui_MainWindow as Start_Ui
+from ui.glucokeep_visualizer_v3 import Ui_MainWindow as Visualizer_Ui
+from ui.glucokeep_about import Ui_MainWindow as About_Ui
 from ui.glucokeep_event_selector_v5 import Ui_MainWindow as Selection_Ui
 from ui.glucokeep_eventglucose_v5 import Ui_MainWindow as Glucose_Ui
 from ui.glucokeep_eventcarbs_v5 import Ui_MainWindow as Carbs_Ui
 from ui.glucokeep_eventexercise_v5 import Ui_MainWindow as Exercise_Ui
 from ui.glucokeep_event_insulinfast_v5 import Ui_MainWindow as FastInsulin_Ui
 from ui.glucokeep_event_insulinlong_v5 import Ui_MainWindow as LongInsulin_Ui
-from ui.glucokeep_visualizer_v1 import Ui_MainWindow as Visualizer_Ui
+
 
 import sys
 import matplotlib
@@ -74,7 +74,18 @@ class StartWindow(QMainWindow, Start_Ui):
         # connect UI elements using slots and signals
         self.btn_addevent.clicked.connect(self.add_event)
         self.btn_visualize.clicked.connect(self.visualize)
-        # TODO: last button
+        self.pushButton.clicked.connect(self.use_demo_data)
+        self.btn_about.clicked.connect(self.show_about)
+
+    def use_demo_data(self):
+        path_to_file = self.ctx.get_resource('demo-data-01.csv')
+        print('path: ' + str(path_to_file))
+        if path_to_file:
+            self.visualizer_window = VisualizerWindow(self.ctx, path_to_file, demo=True)
+            self.visualizer_window.show()
+            self.hide()
+        else:
+            print('\nno file was found\n')
 
     def add_event(self):
         self.selection_window = SelectionWindow(self.ctx)
@@ -86,7 +97,7 @@ class StartWindow(QMainWindow, Start_Ui):
         if path_to_file:
             self.visualizer_window = VisualizerWindow(self.ctx, path_to_file)
             self.visualizer_window.show()
-            self.hide()
+            self.close()
         else:
             print('\nno file was found\n')
 
@@ -94,6 +105,34 @@ class StartWindow(QMainWindow, Start_Ui):
         path = QFileDialog.getOpenFileName(self, 'Open CSV', os.getenv('HOME'), 'CSV(*.csv)')
         if path[0] != '':
             return path
+
+    def show_about(self):
+        self.about_window = AboutWindow(self.ctx)
+        self.about_window.show()
+        self.close()
+
+
+class AboutWindow(QMainWindow, About_Ui):
+    def __init__(self, ctx, *args, **kwargs):
+        super(AboutWindow, self).__init__(*args, **kwargs)
+        self.ctx = ctx
+        self.setupUi(self)
+
+        # set the title
+        self.setWindowTitle("GlucoKeep  About")
+
+        # connect UI elements using slots and signals
+        self.pushButton.clicked.connect(self.back_to_menu)
+
+        # provide link to GitHub
+        # self.label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.label_2.setOpenExternalLinks(True)
+        self.label_2.setText("<a href=https://github.com/psirri/glucokeep>https://github.com/psirri/glucokeep</a>")
+
+    def back_to_menu(self):
+        self.start_window = StartWindow(self.ctx)
+        self.start_window.show()
+        self.close()
 
 
 class SelectionWindow(QMainWindow, Selection_Ui):
@@ -361,7 +400,7 @@ def timedelta_to_string(seconds):
 
 
 class VisualizerWindow(QMainWindow, Visualizer_Ui):
-    def __init__(self, ctx, path_to_file, *args, **kwargs):
+    def __init__(self, ctx, path_to_file, demo=False, *args, **kwargs):
         super(VisualizerWindow, self).__init__(*args, **kwargs)
         self.ctx = ctx
         self.setupUi(self)
@@ -377,7 +416,14 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
         self.setup_signals_and_slots()
 
         # read data from csv file, format as list of event records
-        self.all_events = self.read_csv(path=path_to_file)
+        self.all_events = self.read_csv(path=path_to_file, demo=demo)
+
+        # define color scheme for data visualization widgets
+        self.color_stack = [adjust_lightness('r', 0.75),
+                            'r',
+                            adjust_lightness('limegreen', 0.9),
+                            adjust_lightness('gold', 1.2),
+                            adjust_lightness('gold', 0.85)]
 
         # set initial values for basic interface parameters
         self.setup_initial_parameters()
@@ -397,13 +443,6 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
         self.events_insulin_long = None
         self.glucose_grouped_by_hour_in_day = None
         self.interp_glucose_grouped_by_hour_in_day = None
-
-        # define color scheme for data visualization widgets
-        self.color_stack = [adjust_lightness('r', 0.75),
-                            'r',
-                            adjust_lightness('limegreen', 0.9),
-                            adjust_lightness('gold', 1.2),
-                            adjust_lightness('gold', 0.85)]
 
         # load the window
         self.refresh_all()
@@ -432,24 +471,27 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
             self.mainplot.axes_glucose = self.mainplot.fig.add_subplot(grid[0, 0])
             self.mainplot.axes_insulin = self.mainplot.axes_glucose.twinx()
             self.mainplot.axes_carb = self.mainplot.fig.add_subplot(grid[1, 0])
-        elif self.event_carb.isChecked():
+        elif self.event_exercise.isChecked():
             self.mainplot.fig.clf()
             grid = gridspec.GridSpec(ncols=1, nrows=2, figure=self.mainplot.fig,
                                      height_ratios=[4, 1])
             self.mainplot.axes_glucose = self.mainplot.fig.add_subplot(grid[0, 0])
             self.mainplot.axes_insulin = self.mainplot.axes_glucose.twinx()
-            self.mainplot.axes_carb = self.mainplot.fig.add_subplot(grid[1, 0])
+            self.mainplot.axes_exercise = self.mainplot.fig.add_subplot(grid[1, 0])
         else:
             self.mainplot.fig.clf()
             self.mainplot.axes_glucose = self.mainplot.fig.add_subplot(111)
             self.mainplot.axes_insulin = self.mainplot.axes_glucose.twinx()
             self.mainplot.axes_carb = None
+            self.mainplot.axes_exercise = None
 
         # clear all plots
         self.mainplot.axes_glucose.cla()
         self.mainplot.axes_insulin.cla()
         if self.mainplot.axes_carb:
             self.mainplot.axes_carb.cla()
+        if self.mainplot.axes_exercise:
+            self.mainplot.axes_exercise.cla()
         self.tir_bargraph.axes.cla()
         self.tir_piegraph.axes.cla()
         self.avggluc_bargraph.axes.cla()
@@ -458,8 +500,6 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
         ####################################################
         # ONLY USE DATA IN CURRENT USER-DEFINED TIME RANGE
         ####################################################
-
-        # TODO: only use data in user-defined time range
 
         # get the user-defined time range from QDateTimeEdit widgets
         time_a = self.time_a.dateTime().toPyDateTime()
@@ -473,8 +513,6 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
         ###################################
         # UNPACK DATA FOR EACH EVENT TYPE
         ###################################
-
-        # TODO: read dataset to object-oriented events
 
         # subset of data containing events that pertain only to blood glucose measurements
         self.events_glucose = [[event[0], event[2]] for event in self.events if event[1] is 0]
@@ -512,10 +550,10 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
         self.mainplot.axes_glucose.axhspan(70, 180, color='limegreen', alpha=0.1)
         # self.mainplot.axes_glucose.axhspan(0, 70, color='red', alpha=0.1)
         # self.mainplot.axes_glucose.axhspan(180, 800, color='yellow', alpha=0.1)
-
         self.mainplot.axes_glucose.axhline(69, color='red', lw=3, alpha=0.7)
         self.mainplot.axes_glucose.axhline(181, color=adjust_lightness('gold', 1.2), lw=3)
 
+        # remove default median marker
         if not self.toggle_median.isChecked():
             medianprops = dict(linewidth=0)
         else:
@@ -524,6 +562,7 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
         show_insulin_axis = False
 
         if self.toggle_iqr_all.isChecked():
+            # show 100% of readings using IQR box plots
             stats = get_iqr(self.interp_glucose_grouped_by_hour_in_day, q1=0, q3=100)
             self.mainplot.axes_glucose.bxp([stat for stat in stats.values()],
                                            positions=np.linspace(0.5, 23.5, 24),
@@ -538,6 +577,7 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
                                            showmeans=False,
                                            zorder=1)
         if self.toggle_iqr_eighty.isChecked():
+            # show 80% of readings using IQR box plots
             stats = get_iqr(self.interp_glucose_grouped_by_hour_in_day, q1=10, q3=90)
             self.mainplot.axes_glucose.bxp([stat for stat in stats.values()],
                                            positions=np.linspace(0.5, 23.5, 24),
@@ -552,6 +592,7 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
                                            showmeans=False,
                                            zorder=2)
         if self.toggle_iqr_fifty.isChecked():
+            # show 50% of readings using IQR box plots
             stats = get_iqr(self.interp_glucose_grouped_by_hour_in_day, q1=25, q3=75)
             self.mainplot.axes_glucose.bxp([stat for stat in stats.values()],
                                            positions=np.linspace(0.5, 23.5, 24),
@@ -583,6 +624,7 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
                                                showbox=False,
                                                zorder=4)
         if self.event_bg.isChecked():
+            # show glucose events on primary
             x_data = [round(int(event[0].hour) + (int(event[0].minute) / 60), 2) for event in
                       self.events_glucose]
             y_data = [event[1] for event in self.events_glucose]
@@ -592,48 +634,39 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
                                                zorder=20,
                                                label='Glucose Reading')
         if self.event_carb.isChecked():
+            # show carb events on secondary plot
             x_data = [round(int(event[0].hour) + (int(event[0].minute) / 60), 2) for event in
                       self.events_carb]
             y_data = [event[1] for event in self.events_carb]
-
-            # TODO: create a secondary subplot
-            """grid = gridspec.GridSpec(ncols=1, nrows=2, figure=self.mainplot.fig,
-                                     height_ratios=[4, 1],
-                                     hspace=0.2)
-            self.mainplot.axes_glucose = self.mainplot.fig.add_subplot(grid[0, 0])
-            # self.mainplot.axes_insulin = self.mainplot.fig.add_subplot(grid[0, 0])
-            self.mainplot.axes_carb = self.mainplot.fig.add_subplot(grid[1, 0])
-
-            # self.mainplot.fig.subplots_adjust(bottom=0.3, top=0.95)
-            # self.mainplot.axes_carb = self.mainplot.fig.add_subplot(212)"""
-
-            #########################
-
             self.mainplot.axes_carb.scatter(x_data, y_data,
-                                                     s=11,
+                                                     s=12,
                                                      c='darkorange',
                                                      zorder=10,
                                                      marker='D',
                                                      label='Carbs')
-            # self.mainplot.axes_carb.get_yaxis().set_visible(False)
-            # self.mainplot.axes_carb.get_xaxis().set_visible(False)
 
-            # box = self.mainplot.axes_carb.get_position()
-            # box.x0 = box.x0 + 0.2
-            # box.x1 = box.x1 + 0.01
-            # self.mainplot.axes_carb.set_position(box)
+            # format y-axis
+            self.mainplot.axes_carb.set_yticks(range(0, 101, 50))
+            self.mainplot.axes_carb.set_ylabel('Carbs')
 
         if self.event_exercise.isChecked():
+            # show exercise events on secondary plot
             x_data = [round(int(event[0].hour) + (int(event[0].minute) / 60), 2) for event in
                       self.events_exercise]
             y_data = [event[1] for event in self.events_exercise]
-            self.mainplot.axes_carb.scatter(x_data, y_data,
-                                               s=15,
+            self.mainplot.axes_exercise.scatter(x_data, y_data,
+                                               s=19,
                                                c='cyan',
                                                zorder=11,
                                                marker='+',
                                                label='Exercise')
+
+            # format y-axis
+            self.mainplot.axes_exercise.set_yticks(range(0, 91, 30))
+            self.mainplot.axes_exercise.set_ylabel('Duration of\nExercise (mins)')
+
         if self.event_insfast.isChecked():
+            # show fast-acting insulin events on primary plot
             x_data = [round(int(event[0].hour) + (int(event[0].minute) / 60), 2) for event in
                       self.events_insulin_fast if event[1] < 50]
             y_data = [event[1] for event in self.events_insulin_fast if event[1] < 50]
@@ -645,7 +678,9 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
                                                marker='^',
                                                alpha=0.6,
                                                label='Fast-Acting Insulin Dose')
+            self.mainplot.axes_insulin.set_ylabel('Dosage of Insulin (Units)')
         if self.event_inslong.isChecked():
+            # show long-acting insulin events on primary plot
             x_data = [round(int(event[0].hour) + (int(event[0].minute) / 60), 2) for event in
                       self.events_insulin_long if event[1] < 50]
             y_data = [event[1] for event in self.events_insulin_long if event[1] < 50]
@@ -657,22 +692,7 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
                                                marker='s',
                                                alpha=0.6,
                                                label='Long-Acting Insulin Dose')
-
-        #################
-        # PLOTTING 2
-        #################
-
-        # TODO: ALL DATA VIEW (separate tab)
-        # clear all plots
-        # self.mainplot.axes_glucose.cla()
-        # self.tir_bargraph.axes.cla()
-
-        # scatter plot of all glucose measurements in time range chronologically
-        # self.mainplot.axes_glucose.scatter(self.events_glucose_t[0], self.events_glucose_t[1], c='blue', s=0.5)
-
-        # line plot of interpolated glucose levels in time range chronologically
-        # glucose_interpolated, time_interpolated = interpolate_glucose(self.events_glucose)
-        # self.mainplot.axes_glucose.plot(time_interpolated, glucose_interpolated, c='red', lw=0.75)
+            self.mainplot.axes_insulin.set_ylabel('Dosage of Insulin (Units)')
 
         ########################
         # FORMAT THE MAIN PLOT
@@ -699,51 +719,48 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
         # axis labels
         self.mainplot.axes_glucose.set_ylabel('Blood Glucose (mg/dL)')
         self.mainplot.axes_glucose.set_xlabel('Hour of Day')
-        self.mainplot.axes_glucose.set_title('Daily Trends of Blood Glucose')
+        self.mainplot.axes_glucose.set_title('Daily Trends')
 
+        # add a plot legend
         handles_glucose, labels_glucose = self.mainplot.axes_glucose.get_legend_handles_labels()
         handles_insulin, labels_insulin = self.mainplot.axes_insulin.get_legend_handles_labels()
         handles = handles_glucose + handles_insulin
         labels_legend = labels_glucose + labels_insulin
         self.mainplot.axes_glucose.legend(handles, labels_legend, loc='upper left')
-        # labels=['Blood Glucose (mg/dL)']
 
-        ##################################
-        # TODO: FORMAT THE CARBS/EXERCISE PLOT
-        ##################################
+        if self.event_carb.isChecked() and self.event_exercise.isChecked():
+            # format x-axis text
+            labels = ['12AM', '3AM', '6AM', '9AM', '12PM', '3PM', '6PM', '9PM', '12AM']
+            self.mainplot.axes_carb.set_xticks(range(0, 25, 3))
+            self.mainplot.axes_carb.set_xticklabels(labels)
+            self.mainplot.axes_carb.grid(True, alpha=0.25)
+            # plot legend
+            handles_carb, labels_carb = self.mainplot.axes_carb.get_legend_handles_labels()
+            handles_exercise, labels_exercise = self.mainplot.axes_exercise.get_legend_handles_labels()
+            handles = handles_carb + handles_exercise
+            labels_legend = labels_carb + labels_exercise
+            self.mainplot.axes_carb.legend(handles, labels_legend, loc='upper left')
+        elif not self.event_carb.isChecked() and self.event_exercise.isChecked():
+            # format x-axis text
+            labels = ['12AM', '3AM', '6AM', '9AM', '12PM', '3PM', '6PM', '9PM', '12AM']
+            self.mainplot.axes_exercise.set_xticks(range(0, 25, 3))
+            self.mainplot.axes_exercise.set_xticklabels(labels)
+            self.mainplot.axes_exercise.grid(True, alpha=0.25)
+            # plot legend
+            handles_exercise, labels_exercise = self.mainplot.axes_exercise.get_legend_handles_labels()
+            self.mainplot.axes_exercise.legend(handles_exercise, labels_exercise, loc='upper left')
+        elif self.event_carb.isChecked() and not self.event_exercise.isChecked():
+            # format x-axis text
+            labels = ['12AM', '3AM', '6AM', '9AM', '12PM', '3PM', '6PM', '9PM', '12AM']
+            self.mainplot.axes_carb.set_xticks(range(0, 25, 3))
+            self.mainplot.axes_carb.set_xticklabels(labels)
+            self.mainplot.axes_carb.grid(True, alpha=0.25)
+            # plot legend
+            handles_carb, labels_carb = self.mainplot.axes_carb.get_legend_handles_labels()
+            self.mainplot.axes_carb.legend(handles_carb, labels_carb, loc='upper left')
 
-        """# format x-axis text
-        labels = []
-        self.mainplot.axes_glucose.set_xticks(range(0, 25, 3))
-        self.mainplot.axes_glucose.set_xticklabels(labels)
-
-        # format glucose y-axis text
-        self.mainplot.axes_glucose.set_yticks(range(0, 126, 25))
-
-        # format insulin y-axis text
-        self.mainplot.axes_insulin.set_yticks(range(0, 51, 5))
-        self.mainplot.axes_insulin.get_yaxis().set_visible(show_insulin_axis)
-
-        # format figure
-        self.mainplot.axes_glucose.set_zorder(1)
-        self.mainplot.axes_glucose.patch.set_visible(False)
-        self.mainplot.axes_glucose.grid(True, alpha=0.25)
-
-        # axis labels
-        self.mainplot.axes_glucose.set_ylabel('Blood Glucose (mg/dL)')
-        self.mainplot.axes_glucose.set_xlabel('Hour of Day')
-        self.mainplot.axes_glucose.set_title('Daily Trends of Blood Glucose')
-
-        handles_glucose, labels_glucose = self.mainplot.axes_glucose.get_legend_handles_labels()
-        handles_insulin, labels_insulin = self.mainplot.axes_insulin.get_legend_handles_labels()
-        handles = handles_glucose + handles_insulin
-        labels_legend = labels_glucose + labels_insulin
-        self.mainplot.axes_glucose.legend(handles, labels_legend, loc='upper left')"""
-        # labels=['Blood Glucose (mg/dL)']
-
-        ##########################
-        # UPDATING OTHER WIDGETS
-        ##########################
+        # prevent text from overlapping
+        self.mainplot.fig.tight_layout()
 
         #################
         # TIME IN RANGE
@@ -779,12 +796,10 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
                                    # startangle=90
                                    )
 
-        # self.tir_piegraph.axes.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        # Equal aspect ratio ensures that pie is drawn as a circle.
+        # self.tir_piegraph.axes.axis('equal')
 
-        #######################################
-        # TODO: FORMAT LEGEND FOR RIGHT-HAND COLUMN
-        #######################################
-
+        # format legend
         self.tir_piegraph.axes.legend(bbox_to_anchor=(-1.1, 1), loc='upper left',
                                       borderaxespad=0., labels=labels)
 
@@ -801,7 +816,10 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
         average_num_glucose_msmts = round(count / days, 1)
         self.dayreadings.setText(str(average_num_glucose_msmts))
 
-        # Average Glucose
+        ###################
+        # AVERAGE GLUCOSE
+        ###################
+
         average_glucose = round(np.average([event[1] for event in self.events_glucose]))
         self.avggluc.setText(str(average_glucose) + ' mg/dL')
         # color bar plot
@@ -813,7 +831,10 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
                                            lw=2,
                                            zorder=50)
 
-        # Standard Deviation
+        ######################
+        # STANDARD DEVIATION
+        ######################
+
         std = int(np.around(np.std([event[1] for event in self.events_glucose])))
         self.stdv.setText(str(std) + ' mg/dL')
         # color bar plot
@@ -827,7 +848,10 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
                                         color='black',
                                         zorder=51)
 
-        # Min/Max Glucose
+        ###################
+        # MIN/MAX GLUCOSE
+        ###################
+
         min_glucose = min([event[1] for event in self.events_glucose])
         max_glucose = max([event[1] for event in self.events_glucose])
         self.mingluc.setText(str(min_glucose) + ' mg/dL')
@@ -850,18 +874,16 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
             average_on_carb_days = 0
         self.avgcarb.setText(str(average_on_carb_days) + ' carbs')
 
-        ###################
-        # TODO: NAME THIS
-        ###################
+        #######################
+        # UPDATE FIGURECANVAS
+        #######################
 
         # refresh widgets
-        self.mainplot.draw()
         self.mainplot.draw()
         self.tir_bargraph.draw()
         self.tir_piegraph.draw()
         self.avggluc_bargraph.draw()
         self.stdv_bargraph.draw()
-        # FIXME: self.update()
 
         ###########################################################################################
         #                                   END OF PLOTTING
@@ -881,92 +903,28 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
             'Current Time Range:  ' + str(days) + ' days,  ' + str(hours) + ' hours')
 
     def on_iqrall(self):
-        # self.toggle_iqr_all.setChecked(False)
-        # self.toggle_iqr_eighty.setChecked(False)
-        # self.toggle_iqr_fifty.setChecked(False)
-        # self.event_bg.setChecked(False)
-        # self.event_carb.setChecked(False)
-        # self.event_exercise.setChecked(False)
-        # self.event_insfast.setChecked(False)
-        # self.event_inslong.setChecked(False)
-        pass
+        self.refresh_all()
 
     def on_iqr50(self):
-        # self.toggle_iqr_all.setChecked(False)
-        # self.toggle_iqr_eighty.setChecked(False)
-        # self.toggle_iqr_fifty.setChecked(False)
-        # self.event_bg.setChecked(False)
-        # self.event_carb.setChecked(False)
-        # self.event_exercise.setChecked(False)
-        # self.event_insfast.setChecked(False)
-        # self.event_inslong.setChecked(False)
-        pass
+        self.refresh_all()
 
     def on_iqr80(self):
-        # self.toggle_iqr_all.setChecked(False)
-        # self.toggle_iqr_eighty.setChecked(False)
-        # self.toggle_iqr_fifty.setChecked(False)
-        # self.event_bg.setChecked(False)
-        # self.event_carb.setChecked(False)
-        # self.event_exercise.setChecked(False)
-        # self.event_insfast.setChecked(False)
-        # self.event_inslong.setChecked(False)
-        pass
+        self.refresh_all()
 
     def on_bg(self):
-        # self.toggle_iqr_all.setChecked(False)
-        # self.toggle_iqr_eighty.setChecked(False)
-        # self.toggle_iqr_fifty.setChecked(False)
-        # self.event_bg.setChecked(False)
-        # self.event_carb.setChecked(False)
-        # self.event_exercise.setChecked(False)
-        # self.event_insfast.setChecked(False)
-        # self.event_inslong.setChecked(False)
-        pass
+        self.refresh_all()
 
     def on_carb(self):
-        # self.toggle_iqr_all.setChecked(False)
-        # self.toggle_iqr_eighty.setChecked(False)
-        # self.toggle_iqr_fifty.setChecked(False)
-        # self.event_bg.setChecked(False)
-        # self.event_carb.setChecked(False)
-        # self.event_exercise.setChecked(False)
-        # self.event_insfast.setChecked(False)
-        # self.event_inslong.setChecked(False)
-        pass
+        self.refresh_all()
 
     def on_exercise(self):
-        # self.toggle_iqr_all.setChecked(False)
-        # self.toggle_iqr_eighty.setChecked(False)
-        # self.toggle_iqr_fifty.setChecked(False)
-        # self.event_bg.setChecked(False)
-        # self.event_carb.setChecked(False)
-        # self.event_exercise.setChecked(False)
-        # self.event_insfast.setChecked(False)
-        # self.event_inslong.setChecked(False)
-        pass
+        self.refresh_all()
 
     def on_fastins(self):
-        # self.toggle_iqr_all.setChecked(False)
-        # self.toggle_iqr_eighty.setChecked(False)
-        # self.toggle_iqr_fifty.setChecked(False)
-        # self.event_bg.setChecked(False)
-        # self.event_carb.setChecked(False)
-        # self.event_exercise.setChecked(False)
-        # self.event_insfast.setChecked(False)
-        # self.event_inslong.setChecked(False)
-        pass
+        self.refresh_all()
 
     def on_longins(self):
-        # self.toggle_iqr_all.setChecked(False)
-        # self.toggle_iqr_eighty.setChecked(False)
-        # self.toggle_iqr_fifty.setChecked(False)
-        # self.event_bg.setChecked(False)
-        # self.event_carb.setChecked(False)
-        # self.event_exercise.setChecked(False)
-        # self.event_insfast.setChecked(False)
-        # self.event_inslong.setChecked(False)
-        pass
+        self.refresh_all()
 
     ########################
     # PLOTTING ADJUSTMENTS
@@ -976,8 +934,8 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
     # METHODS TO READ/WRITE TO DISK
     #################################
 
-    def read_csv(self, path=None):
-        if 'glucokeep_demonstration_data' in path[0]:
+    def read_csv(self, path=None, demo=False):
+        if demo:
             "READS DATA THAT HAS BEEN PROVIDED FOR DEMONSTRATION AND EVALUATION PURPOSES"
             print('\nDEMO FILE\n')
             return self.read_csv_demodata(path=path)
@@ -1078,9 +1036,9 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
 
         if not path:
             path = QFileDialog.getOpenFileName(self, 'Open CSV', os.getenv('HOME'), 'CSV(*.csv)')
-        if path[0] != '':
+        if path != '':
             # open file for reading
-            with open(path[0]) as csv_file:
+            with open(path) as csv_file:
                 events = []
                 my_file = csv.reader(csv_file, delimiter='\t')
                 for row_data in my_file:
@@ -1134,14 +1092,15 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
         # connect UI elements using slots and signals
         self.back_button.clicked.connect(self.back_to_menu)
         self.refresh_button.clicked.connect(self.refresh_all)
-        self.toggle_iqr_all.stateChanged.connect(self.on_iqrall)
-        self.toggle_iqr_eighty.stateChanged.connect(self.on_iqr80)
-        self.toggle_iqr_fifty.stateChanged.connect(self.on_iqr50)
-        self.event_bg.stateChanged.connect(self.on_bg)
-        self.event_carb.stateChanged.connect(self.on_carb)
-        self.event_exercise.stateChanged.connect(self.on_exercise)
-        self.event_insfast.stateChanged.connect(self.on_fastins)
-        self.event_inslong.stateChanged.connect(self.on_longins)
+        self.toggle_iqr_all.stateChanged.connect(self.refresh_all)
+        self.toggle_iqr_eighty.stateChanged.connect(self.refresh_all)
+        self.toggle_iqr_fifty.stateChanged.connect(self.refresh_all)
+        self.toggle_median.stateChanged.connect(self.refresh_all)
+        self.event_bg.stateChanged.connect(self.refresh_all)
+        self.event_carb.stateChanged.connect(self.refresh_all)
+        self.event_exercise.stateChanged.connect(self.refresh_all)
+        self.event_insfast.stateChanged.connect(self.refresh_all)
+        self.event_inslong.stateChanged.connect(self.refresh_all)
 
     def setup_time_range(self):
         """ A method that finds the time range of the entire dataset,
