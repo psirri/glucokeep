@@ -96,13 +96,13 @@ class StartWindow(QMainWindow, Start_Ui):
 
     def use_demo_data(self):
         path_to_file = self.ctx.get_resource('demo-data-01.csv')
-        print('path: ' + str(path_to_file))
         if path_to_file:
             self.visualizer_window = VisualizerWindow(self.ctx, path_to_file, demo=True)
             self.visualizer_window.show()
             self.hide()
         else:
-            print('\nno file was found\n')
+            # print('\nno file was found\n')
+            pass
 
     def add_event(self):
         self.selection_window = SelectionWindow(self.ctx)
@@ -116,7 +116,8 @@ class StartWindow(QMainWindow, Start_Ui):
             self.visualizer_window.show()
             self.close()
         else:
-            print('\nno file was found\n')
+            # print('\nno file was found\n')
+            pass
 
     def choose_file(self):
         path = QFileDialog.getOpenFileName(self, 'Open CSV', os.getenv('HOME'), 'CSV(*.csv)')
@@ -145,7 +146,6 @@ class AboutWindow(QMainWindow, About_Ui):
                            "please visit the project's official GitHub page:")
 
         # provide link to GitHub
-        # TODO: self.label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.label_2.setOpenExternalLinks(True)
         self.label_2.setText(
             "<a href=https://github.com/psirri/glucokeep>https://github.com/psirri/glucokeep</a>")
@@ -474,8 +474,6 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
 
     def refresh_all(self):
         """ A method to refresh visual components of window based on user inputs. """
-
-        print('\nrefresh_all()')
 
         if self.event_carb.isChecked() and self.event_exercise.isChecked():
             self.mainplot.fig.clf()
@@ -958,7 +956,6 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
     def read_csv(self, path=None, demo=False):
         if demo:
             "READS DATA THAT HAS BEEN PROVIDED FOR DEMONSTRATION AND EVALUATION PURPOSES"
-            print('\nDEMO FILE\n')
             return self.read_csv_demodata(path=path)
         else:
             "READS DATA THAT BELONGS TO THE PERSONAL USER"
@@ -1127,10 +1124,6 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
         """ A method that finds the time range of the entire dataset,
         then chooses a subset to work with initially. """
 
-        # FIXME: not user-defined yet...
-
-        # TODO: set min/max datetimes
-
         # only use data between the start/end dateTimes
         time_a = None
         time_b = None
@@ -1149,7 +1142,6 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
             elif event[0] < time_a:
                 time_a = event[0]
 
-        # TODO: by default, initially display the most recent 30 days of data
         # time_a = time_b - timedelta(days=30)
 
         # convert Python's native datetime objects into PyQt5's QDateTime objects
