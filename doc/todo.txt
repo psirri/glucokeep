@@ -2,7 +2,7 @@
 TODO CURRENT:
 
 - make icon
-- move Exercise and Carbs checkboxes to right
+- liscencing
 
 ------------------------------------------------
 

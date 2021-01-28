@@ -31,7 +31,6 @@ from ui.glucokeep_eventexercise_v5 import Ui_MainWindow as Exercise_Ui
 from ui.glucokeep_event_insulinfast_v5 import Ui_MainWindow as FastInsulin_Ui
 from ui.glucokeep_event_insulinlong_v5 import Ui_MainWindow as LongInsulin_Ui
 
-
 import sys
 import matplotlib
 
@@ -124,10 +123,14 @@ class AboutWindow(QMainWindow, About_Ui):
         # connect UI elements using slots and signals
         self.pushButton.clicked.connect(self.back_to_menu)
 
+        self.label.setText("To contact the developer or learn more about GlucoKeep,\n"
+                           "please visit the project's official GitHub page:")
+
         # provide link to GitHub
-        # self.label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        # TODO: self.label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.label_2.setOpenExternalLinks(True)
-        self.label_2.setText("<a href=https://github.com/psirri/glucokeep>https://github.com/psirri/glucokeep</a>")
+        self.label_2.setText(
+            "<a href=https://github.com/psirri/glucokeep>https://github.com/psirri/glucokeep</a>")
 
     def back_to_menu(self):
         self.start_window = StartWindow(self.ctx)
@@ -639,11 +642,11 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
                       self.events_carb]
             y_data = [event[1] for event in self.events_carb]
             self.mainplot.axes_carb.scatter(x_data, y_data,
-                                                     s=12,
-                                                     c='darkorange',
-                                                     zorder=10,
-                                                     marker='D',
-                                                     label='Carbs')
+                                            s=12,
+                                            c='darkorange',
+                                            zorder=10,
+                                            marker='D',
+                                            label='Carbs')
 
             # format y-axis
             self.mainplot.axes_carb.set_yticks(range(0, 101, 50))
@@ -655,11 +658,11 @@ class VisualizerWindow(QMainWindow, Visualizer_Ui):
                       self.events_exercise]
             y_data = [event[1] for event in self.events_exercise]
             self.mainplot.axes_exercise.scatter(x_data, y_data,
-                                               s=19,
-                                               c='cyan',
-                                               zorder=11,
-                                               marker='+',
-                                               label='Exercise')
+                                                s=19,
+                                                c='cyan',
+                                                zorder=11,
+                                                marker='+',
+                                                label='Exercise')
 
             # format y-axis
             self.mainplot.axes_exercise.set_yticks(range(0, 91, 30))
