@@ -1,13 +1,13 @@
 ------------------------------------------------
 TODO CURRENT:
 
+- make icon
+- move Exercise and Carbs checkboxes to right
+
+------------------------------------------------
+
 - reorganize code
 - use interpolated data for IQR calculations
-
-
-
-
-
 
 ------------------------------------------------
 
