@@ -18,26 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import os
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime
 import numpy as np
 
-from PyQt5.QtCore import QDateTime, QTime, QDate
-# import time
-import calendar
+from PyQt5.QtCore import QDateTime
 
-# from PyQt5.QtGui import QImage, QPixmap, QGuiApplication
-# from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QCheckBox
-# QAbstractItemView, QTableWidget, QTableWidgetItem, QDialog, QProgressBar,
-# QPushButton, QApplication, QTabWidget, QWidget, QVBoxLayout, QLabel
-
-# import matplotlib
-# matplotlib.use('Qt5Agg')
-from PyQt5 import QtCore, QtWidgets
-# from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, \
-#     NavigationToolbar2QT as NavigationToolbar
-# from matplotlib.figure import Figure
-from matplotlib.markers import MarkerStyle
+from PyQt5.QtWidgets import QMainWindow, QFileDialog
 
 from ui.glucokeep_startscreen_v2 import Ui_MainWindow as Start_Ui
 from ui.glucokeep_visualizer_v3 import Ui_MainWindow as Visualizer_Ui
@@ -49,25 +35,16 @@ from ui.glucokeep_eventexercise_v5 import Ui_MainWindow as Exercise_Ui
 from ui.glucokeep_event_insulinfast_v5 import Ui_MainWindow as FastInsulin_Ui
 from ui.glucokeep_event_insulinlong_v5 import Ui_MainWindow as LongInsulin_Ui
 
-import sys
 import matplotlib
 
 matplotlib.use('Qt5Agg')
-import matplotlib.ticker as ticker
-
-from PyQt5 import QtCore, QtGui, QtWidgets
-
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, \
-    NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
-
-from metrics import get_time_in_range, interpolate_glucose, group_events_by_hour_in_day, \
-    group_glucose_by_hour_in_day, get_iqr, group_interp_glucose_by_hour_in_day
-import matplotlib.cbook as cbook
-
+from PyQt5 import QtCore, QtWidgets
 import matplotlib.colors
 import matplotlib.gridspec as gridspec
 import colorsys
+
+from metrics import get_time_in_range, interpolate_glucose, group_glucose_by_hour_in_day, \
+    get_iqr, group_interp_glucose_by_hour_in_day
 
 
 # formats for datetime:
