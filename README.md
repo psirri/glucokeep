@@ -22,10 +22,10 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## Screenshots
 
+![Alt text](/screenshots/screenshot_visualize_window.png?raw=true "Data Visualization Window")
+
 ![Alt text](/screenshots/screenshot_start.png?raw=true "GlucoKeep Start Screen")
 
 ![Alt text](/screenshots/screenshot_new_event.png?raw=true "Creating a New Event")
 
 ![Alt text](/screenshots/screenshot_insulin_event.png?raw=true "Adding an Insulin Event")
-
-![Alt text](/screenshots/screenshot_visualize_window.png?raw=true "Data Visualization Window")
