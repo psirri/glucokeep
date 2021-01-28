@@ -20,6 +20,8 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 [GNU GPLv3](COPYING)
 
+## Screenshots
+
 ![Alt text](/screenshots/screenshot_start.png?raw=true "GlucoKeep Start Screen")
 
 ![Alt text](/screenshots/screenshot_new_event.png?raw=true "Creating a New Event")
